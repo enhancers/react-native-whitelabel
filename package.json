@@ -1,6 +1,7 @@
 {
-  "name": "react-native-whitelabel",
+  "name": "@enhancers/react-native-whitelabel",
   "version": "1.0.0",
+  "private": false,
   "description": "React Native White Label (RNWL) - A production-ready library for white-label React Native applications with feature flags support",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -35,16 +36,16 @@
     "feature-management",
     "white-label-apps"
   ],
-  "author": "Your Name",
+  "author": "Enhancers",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/rnwl"
+    "url": "git+https://github.com/gianlucalippolis/react-native-whitelabel.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/rnwl/issues"
+    "url": "https://github.com/gianlucalippolis/react-native-whitelabel/issues"
   },
-  "homepage": "https://github.com/yourusername/rnwl",
+  "homepage": "https://github.com/gianlucalippolis/react-native-whitelabel#readme",
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-native": ">=0.55.0"
