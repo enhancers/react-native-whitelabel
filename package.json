@@ -1,6 +1,6 @@
 {
   "name": "@enhancers/react-native-whitelabel",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": false,
   "description": "React Native White Label (RNWL) - A production-ready library for white-label React Native applications with feature flags support",
   "main": "dist/index.js",
