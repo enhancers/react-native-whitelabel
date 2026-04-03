@@ -1,0 +1,40 @@
+brand: green
+displayName: Green Theme
+bundleId: com.rnwl.green
+packageName: com.rnwl.green
+version: "1.0.0"
+
+colors:
+  primary: "#00AA00"
+  secondary: "#33FF33"
+  background: "#FFFFFF"
+
+# deeplinkScheme: greenapp          # shorthand for a single scheme
+deeplinkSchemes:                    # array form — supports multiple schemes
+  - greenapp
+# universalLinkDomain: green.example.com
+# webcredentialsDomain: green.example.com
+
+# iOS-only entitlements (optional)
+# iosEntitlements:
+#   com.apple.developer.networking.HotspotConfiguration: true
+#   com.apple.developer.networking.wifi-info: true
+
+ignoreAssets: false
+
+params:
+  apiBaseUrl: "https://api.green.example.com"
+  supportedLocales:
+    - "en"
+    - "de"
+  maxRetries: 5
+  debugMode: false
+
+features:
+  authentication: true
+  pushNotifications: true
+  darkMode: true
+  videoStreaming: true
+  paymentGateway: true
+  analytics: true
+  ads: false

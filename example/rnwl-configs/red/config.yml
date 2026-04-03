@@ -1,0 +1,41 @@
+brand: red
+displayName: Red Theme
+bundleId: com.rnwl.red
+packageName: com.rnwl.red
+version: "1.0.0"
+
+colors:
+  primary: "#FF0000"
+  secondary: "#FF3333"
+  background: "#FFFFFF"
+
+# deeplinkScheme: redapp            # shorthand for a single scheme
+deeplinkSchemes:                    # array form — supports multiple schemes
+  - redapp
+# universalLinkDomain: red.example.com
+# webcredentialsDomain: red.example.com
+
+# iOS-only entitlements (optional)
+# iosEntitlements:
+#   com.apple.developer.networking.HotspotConfiguration: true
+#   com.apple.developer.networking.wifi-info: true
+
+ignoreAssets: false
+
+params:
+  apiBaseUrl: "https://api.red.example.com"
+  supportedLocales:
+    - "en"
+    - "es"
+    - "pt"
+  maxRetries: 2
+  debugMode: true
+
+features:
+  authentication: true
+  pushNotifications: true
+  darkMode: true
+  videoStreaming: true
+  paymentGateway: true
+  analytics: true
+  ads: false

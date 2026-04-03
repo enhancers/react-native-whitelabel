@@ -1,0 +1,41 @@
+brand: blue
+displayName: Blue Theme
+bundleId: com.rnwl.blue
+packageName: com.rnwl.blue
+version: "2.0.0"
+
+colors:
+  primary: "#0066FF"
+  secondary: "#3366FF"
+  background: "#FFFFFF"
+
+# deeplinkScheme: blueapp           # shorthand for a single scheme
+deeplinkSchemes:                    # array form — supports multiple schemes
+  - blueapp
+# universalLinkDomain: blue.example.com
+# webcredentialsDomain: blue.example.com
+
+# iOS-only entitlements (optional)
+# iosEntitlements:
+#   com.apple.developer.networking.HotspotConfiguration: true
+#   com.apple.developer.networking.wifi-info: true
+
+ignoreAssets: false
+
+params:
+  apiBaseUrl: "https://api.blue.example.com"
+  supportedLocales:
+    - "en"
+    - "it"
+    - "fr"
+  maxRetries: 3
+  debugMode: false
+
+features:
+  authentication: true
+  pushNotifications: false
+  darkMode: false
+  videoStreaming: false
+  paymentGateway: true
+  analytics: true
+  ads: true

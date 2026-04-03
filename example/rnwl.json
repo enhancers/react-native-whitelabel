@@ -1,0 +1,27 @@
+{
+  "brand": "blue",
+  "packageName": "com.rnwl.blue",
+  "displayName": "Blue Theme",
+  "deeplinkScheme": "blueapp",
+  "universalLinkDomain": "blue.example.com",
+  "colors": {
+    "primary": "#0066FF",
+    "secondary": "#3366FF",
+    "background": "#FFFFFF"
+  },
+  "params": {
+    "apiBaseUrl": "https://api.blue.example.com",
+    "supportedLocales": ["en", "it", "fr"],
+    "maxRetries": 3,
+    "debugMode": false
+  },
+  "features": {
+    "authentication": true,
+    "pushNotifications": false,
+    "darkMode": false,
+    "videoStreaming": false,
+    "paymentGateway": true,
+    "analytics": true,
+    "ads": true
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "name": "react-native-whitelabel",
+  "version": "1.0.0",
+  "description": "React Native White Label (RNWL) - A production-ready library for white-label React Native applications with feature flags support",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "bin": {
+    "rnwl": "./bin/rnwl.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublish": "npm run build",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "react-native",
+    "white-label",
+    "rnwl",
+    "feature-flags",
+    "multi-brand",
+    "branding",
+    "configuration",
+    "feature-management",
+    "white-label-apps"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/rnwl"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/rnwl/issues"
+  },
+  "homepage": "https://github.com/yourusername/rnwl",
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-native": ">=0.55.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "react-native": "^0.79.0",
+    "typescript": "^4.0.0"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.1"
+  },
+  "react-native": {
+    "path": "path-browserify",
+    "fs": "react-native-level-fs",
+    "_stream_transform": "readable-stream/transform",
+    "_stream_readable": "readable-stream/readable",
+    "_stream_writable": "readable-stream/writable",
+    "_stream_duplex": "readable-stream/duplex",
+    "_stream_passthrough": "readable-stream/passthrough",
+    "stream": "stream-browserify",
+    "tls": false
+  },
+  "browser": {
+    "path": "path-browserify",
+    "fs": "react-native-level-fs",
+    "_stream_transform": "readable-stream/transform",
+    "_stream_readable": "readable-stream/readable",
+    "_stream_writable": "readable-stream/writable",
+    "_stream_duplex": "readable-stream/duplex",
+    "_stream_passthrough": "readable-stream/passthrough",
+    "stream": "stream-browserify",
+    "tls": false
+  }
+}
