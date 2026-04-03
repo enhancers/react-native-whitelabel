@@ -40,12 +40,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gianlucalippolis/react-native-whitelabel.git"
+    "url": "git+https://github.com/enhancers/react-native-whitelabel.git"
   },
   "bugs": {
-    "url": "https://github.com/gianlucalippolis/react-native-whitelabel/issues"
+    "url": "https://github.com/enhancers/react-native-whitelabel/issues"
   },
-  "homepage": "https://github.com/gianlucalippolis/react-native-whitelabel#readme",
+  "homepage": "https://github.com/enhancers/react-native-whitelabel#readme",
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-native": ">=0.55.0"
