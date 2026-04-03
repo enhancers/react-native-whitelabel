@@ -1,6 +1,6 @@
 # RNWL - React Native White Label Library
 
-[![npm version](https://badge.fury.io/js/rnwl.svg)](https://www.npmjs.com/package/rnwl)
+[![npm version](https://badge.fury.io/js/%40enhancers%2Freact-native-whitelabel.svg)](https://www.npmjs.com/package/@enhancers/react-native-whitelabel)
 
 **RNWL** is a production-ready library for building **white-label React Native applications** with advanced feature flags support.
 
@@ -23,9 +23,9 @@ RNWL enables you to build a single React Native app that can be branded and conf
 ## 📦 Installation
 
 ```bash
-npm install rnwl
+npm install @enhancers/react-native-whitelabel
 # or
-yarn add rnwl
+yarn add @enhancers/react-native-whitelabel
 ```
 
 ## 🚀 Quick Start
@@ -33,7 +33,7 @@ yarn add rnwl
 ### 1. Wrap your app with `RNWLProvider`
 
 ```typescript
-import { RNWLProvider } from 'react-native-whitelabel';
+import { RNWLProvider } from '@enhancers/react-native-whitelabel';
 
 export default function App() {
   return (
@@ -82,7 +82,7 @@ module.exports = mergeConfig(getDefaultConfig(__dirname), config);
 ### 3. Use Features in Components
 
 ```typescript
-import { useRNWLFeatures, useRNWLColors, RNWLGate } from 'react-native-whitelabel';
+import { useRNWLFeatures, useRNWLColors, RNWLGate } from '@enhancers/react-native-whitelabel';
 
 function MyComponent() {
   const { isFeatureEnabled, isLoading, error, displayName, packageName, deeplinkScheme } = useRNWLFeatures();
@@ -226,7 +226,7 @@ const locales = params.supportedLocales; // ["en", "it", "fr"]
 Or directly from the manager singleton:
 
 ```typescript
-import { rnwlFeatureFlagsManager } from 'react-native-whitelabel';
+import { rnwlFeatureFlagsManager } from '@enhancers/react-native-whitelabel';
 
 const params = rnwlFeatureFlagsManager.getParams();
 ```
@@ -395,7 +395,7 @@ return <Text>{displayName}</Text>; // "Blue App"
 Both values are exposed via `useRNWLFeatures()`:
 
 ```typescript
-import { useRNWLFeatures } from 'react-native-whitelabel';
+import { useRNWLFeatures } from '@enhancers/react-native-whitelabel';
 
 function ShareButton() {
   const { deeplinkScheme, universalLinkDomain } = useRNWLFeatures();
@@ -593,7 +593,7 @@ Any key name is supported — `primary`, `secondary`, `background`, `accent`, `e
 ### useRNWLColors()
 
 ```typescript
-import { useRNWLColors } from 'react-native-whitelabel';
+import { useRNWLColors } from '@enhancers/react-native-whitelabel';
 
 function ThemedButton() {
   const { primary } = useRNWLColors();
@@ -628,7 +628,7 @@ Returns `true` if the feature is enabled, `false` otherwise. Never throws. Logs 
 - Features have not been loaded yet (only possible on web or when using a custom `featureLoader`, since native initialization is synchronous)
 
 ```typescript
-import { useRNWLFeatures } from 'react-native-whitelabel';
+import { useRNWLFeatures } from '@enhancers/react-native-whitelabel';
 
 function MyComponent() {
   const { isFeatureEnabled } = useRNWLFeatures();
@@ -644,7 +644,7 @@ function MyComponent() {
 Or directly via the manager singleton:
 
 ```typescript
-import { rnwlFeatureFlagsManager } from 'react-native-whitelabel';
+import { rnwlFeatureFlagsManager } from '@enhancers/react-native-whitelabel';
 
 const enabled = rnwlFeatureFlagsManager.isFeatureEnabled('analytics');
 ```
@@ -709,7 +709,7 @@ You can combine both: `featureLoader` fetches the base config, `overrides` appli
 Call `rnwlFeatureFlagsManager.reinitialize()` to discard current state and re-run initialization. Useful for refreshing flags after login or when the user changes their plan.
 
 ```typescript
-import { rnwlFeatureFlagsManager } from 'react-native-whitelabel';
+import { rnwlFeatureFlagsManager } from '@enhancers/react-native-whitelabel';
 
 // After user logs in, reload flags from backend
 await rnwlFeatureFlagsManager.reinitialize({
