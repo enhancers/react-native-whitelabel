@@ -299,12 +299,12 @@ function applyIosDeepLinks(iosDir, deeplinkSchemes, universalLinkDomain, webcred
     if (plistContent.includes('<key>CFBundleURLTypes</key>')) {
       if (urlTypesBlock) {
         plistContent = plistContent.replace(
-          /<key>CFBundleURLTypes<\/key>\s*<array>[\s\S]*<\/array>/,
+          /<key>CFBundleURLTypes<\/key>\s*<array>[\s\S]*?\n\t<\/array>/,
           urlTypesBlock
         );
       } else {
         plistContent = plistContent.replace(
-          /\s*<key>CFBundleURLTypes<\/key>\s*<array>[\s\S]*<\/array>/,
+          /\s*<key>CFBundleURLTypes<\/key>\s*<array>[\s\S]*?\n\t<\/array>/,
           ''
         );
       }
