@@ -24,6 +24,8 @@ export interface RNWLContextValue {
   disabledFeatures: string[];
   isLoading: boolean;
   error: Error | null;
+  /** Brand identifier (e.g. "blue", "red"). Null if not configured. */
+  brand: string | null;
   /** Human-readable app name for this brand. Null if not configured. */
   displayName: string | null;
   /** Native package / bundle identifier. Null if not configured. */
@@ -50,6 +52,7 @@ const initialState: State = {
   disabledFeatures: [],
   isLoading: true,
   error: null,
+  brand: null,
   displayName: null,
   packageName: null,
   deeplinkScheme: null,
@@ -88,6 +91,7 @@ export function RNWLProvider({ children, options }: RNWLProviderProps) {
             allFeatures: rnwlFeatureFlagsManager.getAllFeatures(),
             enabledFeatures: rnwlFeatureFlagsManager.getEnabledFeatures(),
             disabledFeatures: rnwlFeatureFlagsManager.getDisabledFeatures(),
+            brand: cfg.brand ?? null,
             displayName: cfg.displayName ?? null,
             packageName: cfg.packageName ?? null,
             deeplinkScheme: cfg.deeplinkScheme ?? null,

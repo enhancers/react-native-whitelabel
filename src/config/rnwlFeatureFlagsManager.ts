@@ -27,6 +27,8 @@ export interface RNWLColors {
 
 // String config values (brand-level settings, not feature flags)
 export interface RNWLConfig {
+  /** Brand identifier (e.g. "blue", "red") — matches the folder name in rnwl-configs/ */
+  brand?: string;
   /** Human-readable app name for this brand (e.g. "Blue App") */
   displayName?: string;
   /** Native package / bundle identifier (e.g. "com.myapp.blue") */
@@ -171,6 +173,7 @@ export class RNWLFeatureFlagsManager {
 
   private extractConfig(data: Record<string, unknown>): RNWLConfig {
     return {
+      brand: typeof data.brand === "string" ? data.brand : undefined,
       displayName: typeof data.displayName === "string" ? data.displayName : undefined,
       packageName: typeof data.packageName === "string" ? data.packageName : undefined,
       deeplinkScheme: typeof data.deeplinkScheme === "string" ? data.deeplinkScheme : undefined,

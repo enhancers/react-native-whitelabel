@@ -85,7 +85,7 @@ module.exports = mergeConfig(getDefaultConfig(__dirname), config);
 import { useRNWLFeatures, useRNWLColors, RNWLGate } from '@enhancers/react-native-whitelabel';
 
 function MyComponent() {
-  const { isFeatureEnabled, isLoading, error, displayName, packageName, deeplinkScheme } = useRNWLFeatures();
+  const { isFeatureEnabled, isLoading, error, brand, displayName, packageName, deeplinkScheme } = useRNWLFeatures();
   const { primary, background } = useRNWLColors();
 
   if (isLoading) return <LoadingScreen />;
@@ -382,12 +382,13 @@ The CLI uses HTML comment markers (`<!-- RNWL:deeplinkScheme -->` / `<!-- RNWL:u
 
 ### Accessing brand identity in the app
 
-`displayName` and `packageName` are exposed via `useRNWLFeatures()`:
+`brand`, `displayName` and `packageName` are exposed via `useRNWLFeatures()`:
 
 ```typescript
-const { displayName, packageName } = useRNWLFeatures();
+const { brand, displayName, packageName } = useRNWLFeatures();
 
 return <Text>{displayName}</Text>; // "Blue App"
+// brand === "blue" (matches the folder name in rnwl-configs/ and the brand: field in config.yml)
 ```
 
 ### Accessing deep link config in the app
