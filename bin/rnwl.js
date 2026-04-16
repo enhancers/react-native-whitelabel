@@ -409,15 +409,11 @@ async function main() {
       }
     }
 
-    // Update Android app_name in strings.xml
-    const stringsXmlPath = path.join(PROJECT_ROOT, 'android', 'app', 'src', 'main', 'res', 'values', 'strings.xml');
-    if (fs.existsSync(stringsXmlPath) && config.displayName) {
-      const stringsContent = readFile(stringsXmlPath);
-      const updated = stringsContent.replace(
-        /<string name="app_name">.*?<\/string>/,
-        `<string name="app_name">${config.displayName}</string>`
-      );
-      writeFile(stringsXmlPath, updated);
+    // Copy Android strings.xml from brand config if present
+    const brandStringsXmlPath = path.join(brandConfigDir, 'android', 'strings.xml');
+    const projectStringsXmlPath = path.join(PROJECT_ROOT, 'android', 'app', 'src', 'main', 'res', 'values', 'strings.xml');
+    if (fs.existsSync(brandStringsXmlPath)) {
+      fs.copyFileSync(brandStringsXmlPath, projectStringsXmlPath);
     }
 
     // Update Android applicationId, versionCode and versionName in build.gradle

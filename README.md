@@ -286,6 +286,27 @@ Place source files in `rnwl-configs/<brand>/ios/splash/`:
 
 > **Note:** the CLI copies images into existing imagesets — it does not create `Splashscreen.imageset` or `Splashscreen~landscape.imageset` if they don't already exist in your Xcode project.
 
+## 📄 Android strings.xml
+
+Place a `strings.xml` file in `rnwl-configs/<brand>/android/strings.xml` to fully control the Android string resources for that brand. The CLI copies it directly to `android/app/src/main/res/values/strings.xml` when present.
+
+| Source file | Destination |
+|-------------|-------------|
+| `rnwl-configs/<brand>/android/strings.xml` | `android/app/src/main/res/values/strings.xml` |
+
+If the file is absent in the brand folder it is silently skipped — no error is thrown.
+
+### Example
+
+```xml
+<resources>
+    <string name="app_name">Blue App</string>
+    <string name="splash_name">Blue App</string>
+</resources>
+```
+
+> This replaces the entire destination file, so make sure to include all string keys your app references.
+
 ## 🔥 Google Services Config
 
 Brand-specific Firebase / Google Services config files are copied automatically when present in the brand folder. No YAML key is required. Processed independently of `ignoreAssets`.
@@ -450,6 +471,7 @@ my-app/
 │   │   │   │   ├── ...
 │   │   │   │   ├── splashscreen_land-mdpi.png   (optional landscape)
 │   │   │   │   └── ...
+│   │   │   ├── strings.xml                      (optional)
 │   │   │   └── google-services.json             (optional)
 │   │   └── ios/
 │   │       ├── icons/
@@ -542,7 +564,7 @@ When executed, the CLI:
 1. Reads `rnwl-configs/<brand>/config.yml`
 2. Updates `app.json` with `displayName` and `version`
 3. Updates `android/app/build.gradle` with `applicationId`, and optionally `versionCode` / `versionName` if the flags are provided
-4. Updates `android/.../strings.xml` with the app name
+4. Copies `android/strings.xml` from the brand config folder to `android/app/src/main/res/values/strings.xml` (if present)
 5. Updates `ios/.../Info.plist` with `CFBundleDisplayName`
 6. Updates `ios/.../project.pbxproj` with `PRODUCT_BUNDLE_IDENTIFIER`, and optionally `CURRENT_PROJECT_VERSION` / `MARKETING_VERSION` if the flags are provided
 7. Copies Android icons into `mipmap-*` directories
