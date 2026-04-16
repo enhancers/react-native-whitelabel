@@ -488,15 +488,11 @@ async function main() {
             );
             writeFile(infoPlistPath, updated);
           }
-          // LaunchScreen.storyboard
-          const storyboardPath = path.join(iosDir, appDir, 'LaunchScreen.storyboard');
-          if (fs.existsSync(storyboardPath)) {
-            const sbContent = readFile(storyboardPath);
-            const updated = sbContent.replace(
-              /(text=")[^"]+(" textAlignment="center" lineBreakMode="middleTruncation")/,
-              `$1${config.displayName}$2`
-            );
-            writeFile(storyboardPath, updated);
+          // LaunchScreen.storyboard — copy from brand config if present
+          const brandStoryboardPath = path.join(brandConfigDir, 'ios', 'LaunchScreen.storyboard');
+          const destStoryboardPath = path.join(iosDir, appDir, 'LaunchScreen.storyboard');
+          if (fs.existsSync(brandStoryboardPath)) {
+            fs.copyFileSync(brandStoryboardPath, destStoryboardPath);
           }
         }
       }

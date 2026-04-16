@@ -307,6 +307,18 @@ If the file is absent in the brand folder it is silently skipped — no error is
 
 > This replaces the entire destination file, so make sure to include all string keys your app references.
 
+## 🍎 iOS LaunchScreen.storyboard
+
+Place a `LaunchScreen.storyboard` file in `rnwl-configs/<brand>/ios/LaunchScreen.storyboard` to fully control the iOS launch screen for that brand. The CLI copies it directly to `ios/<App>/LaunchScreen.storyboard` when present.
+
+| Source file | Destination |
+|-------------|-------------|
+| `rnwl-configs/<brand>/ios/LaunchScreen.storyboard` | `ios/<App>/LaunchScreen.storyboard` |
+
+If the file is absent in the brand folder it is silently skipped — no error is thrown.
+
+> This replaces the entire destination file, so make sure the storyboard is complete and valid.
+
 ## 🔥 Google Services Config
 
 Brand-specific Firebase / Google Services config files are copied automatically when present in the brand folder. No YAML key is required. Processed independently of `ignoreAssets`.
@@ -479,6 +491,8 @@ my-app/
 │   │       │   ├── AppIcon-120.png
 │   │       │   └── ...
 │   │       ├── splash/
+│   │       │   └── ...
+│   │       ├── LaunchScreen.storyboard          (optional)
 │   │       │   ├── Splashscreen.png
 │   │       │   ├── Splashscreen@2x.png
 │   │       │   ├── Splashscreen@3x.png
@@ -566,16 +580,17 @@ When executed, the CLI:
 3. Updates `android/app/build.gradle` with `applicationId`, and optionally `versionCode` / `versionName` if the flags are provided
 4. Copies `android/strings.xml` from the brand config folder to `android/app/src/main/res/values/strings.xml` (if present)
 5. Updates `ios/.../Info.plist` with `CFBundleDisplayName`
-6. Updates `ios/.../project.pbxproj` with `PRODUCT_BUNDLE_IDENTIFIER`, and optionally `CURRENT_PROJECT_VERSION` / `MARKETING_VERSION` if the flags are provided
-7. Copies Android icons into `mipmap-*` directories
-8. Copies iOS icons into `AppIcon.appiconset` and regenerates `Contents.json`
-9. Copies Android splash images into `mipmap-*` directories (if `android/splash/` exists in the brand folder)
-10. Copies iOS splash images into `Splashscreen.imageset` and/or `Splashscreen~landscape.imageset` and regenerates `Contents.json` (if `ios/splash/` exists)
-11. Copies `google-services.json` to `android/app/` (if present in the brand folder)
-12. Copies `GoogleService-Info.plist` to `ios/<App>/` (if present in the brand folder)
-13. Generates `rnwl.json` in the project root with the active feature flags and brand colors
-14. Configures native deep links (if `deeplinkScheme` or `universalLinkDomain` are set — see [Deep Link Configuration](#-deep-link-configuration))
-15. Writes additional iOS entitlements (if `iosEntitlements` is set — see [iOS Entitlements](#ios-entitlements-iosentitlements))
+6. Copies `ios/LaunchScreen.storyboard` from the brand config folder to `ios/<App>/LaunchScreen.storyboard` (if present)
+7. Updates `ios/.../project.pbxproj` with `PRODUCT_BUNDLE_IDENTIFIER`, and optionally `CURRENT_PROJECT_VERSION` / `MARKETING_VERSION` if the flags are provided
+8. Copies Android icons into `mipmap-*` directories
+9. Copies iOS icons into `AppIcon.appiconset` and regenerates `Contents.json`
+10. Copies Android splash images into `mipmap-*` directories (if `android/splash/` exists in the brand folder)
+11. Copies iOS splash images into `Splashscreen.imageset` and/or `Splashscreen~landscape.imageset` and regenerates `Contents.json` (if `ios/splash/` exists)
+12. Copies `google-services.json` to `android/app/` (if present in the brand folder)
+13. Copies `GoogleService-Info.plist` to `ios/<App>/` (if present in the brand folder)
+14. Generates `rnwl.json` in the project root with the active feature flags and brand colors
+15. Configures native deep links (if `deeplinkScheme` or `universalLinkDomain` are set — see [Deep Link Configuration](#-deep-link-configuration))
+16. Writes additional iOS entitlements (if `iosEntitlements` is set — see [iOS Entitlements](#ios-entitlements-iosentitlements))
 
 ### Full example with version flags
 
