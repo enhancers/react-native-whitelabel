@@ -250,6 +250,25 @@ The `ignoreAssets` flag controls whether the CLI auto-detects and processes bran
   - Use when assets are handled by native build tools
   - Useful for design teams that generate assets independently
 
+## 🤖 Android Icons
+
+Place icon files in `rnwl-configs/<brand>/android/icons/`:
+
+| Source file | Destination |
+|-------------|-------------|
+| `ic_launcher-{density}.png` | `android/app/src/main/res/mipmap-{density}/ic_launcher.png` |
+| `ic_launcher_round-{density}.png` | `android/app/src/main/res/mipmap-{density}/ic_launcher_round.png` |
+| `ic_launcher_foreground-{density}.png` | `android/app/src/main/res/mipmap-{density}/ic_launcher_foreground.png` |
+
+Supported densities: `mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`.
+
+`ic_launcher_foreground` files are **optional** and intended for [adaptive icons](https://developer.android.com/develop/ui/views/launch/icon_design_adaptive) (Android 8.0+, API 26+). If not provided, no foreground file is written. To use adaptive icons correctly:
+
+1. Provide `ic_launcher_foreground-{density}.png` files designed with the [adaptive icon safe zone](https://developer.android.com/develop/ui/views/launch/icon_design_adaptive#design-guidelines) (108×108dp canvas, 72×72dp safe zone)
+2. Add `android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml` manually to your project referencing `@mipmap/ic_launcher_foreground` and a background layer
+
+> **Why not auto-generate `ic_launcher_foreground` from `ic_launcher`?** On Android 8.0+ launchers (Samsung, Pixel, etc.) that find a `ic_launcher_foreground` in the APK, they apply a circular mask to it. A square icon not designed for the safe zone would appear visually cropped.
+
 ## 🖼️ Splash Screen Assets
 
 Splash screen images are processed automatically when a `splash/` folder is present inside the brand's `android/` or `ios/` directory. No YAML key is required. The `ignoreAssets: true` flag also skips splash processing.
@@ -476,6 +495,9 @@ my-app/
 │   │   │   ├── icons/
 │   │   │   │   ├── ic_launcher-mdpi.png
 │   │   │   │   ├── ic_launcher-hdpi.png
+│   │   │   │   ├── ...
+│   │   │   │   ├── ic_launcher_foreground-mdpi.png  (optional, adaptive icons)
+│   │   │   │   ├── ic_launcher_foreground-hdpi.png
 │   │   │   │   └── ...
 │   │   │   ├── splash/
 │   │   │   │   ├── splashscreen-mdpi.png

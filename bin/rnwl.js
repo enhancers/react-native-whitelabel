@@ -539,7 +539,15 @@ async function main() {
       const androidDir = path.join(brandConfigDir, 'android', 'icons');
       const iosDir = path.join(brandConfigDir, 'ios', 'icons');
 
-      // Android icons: ic_launcher-{density}.png → mipmap-{density}/ic_launcher.png + ic_launcher_foreground.png
+      // Android icons: ic_launcher-{density}.png → mipmap-{density}/ic_launcher.png
+      // ic_launcher_foreground-{density}.png → mipmap-{density}/ic_launcher_foreground.png (optional, for adaptive icons)
+      // ic_launcher_round-{density}.png      → mipmap-{density}/ic_launcher_round.png
+      //
+      // NOTE: ic_launcher_foreground is NOT auto-generated from ic_launcher to avoid visual
+      // corruption on Android 8.0+ launchers that apply a circular mask to the foreground layer.
+      // To use adaptive icons, provide dedicated ic_launcher_foreground-{density}.png files
+      // (designed with the adaptive icon safe zone) and add mipmap-anydpi-v26/ic_launcher.xml
+      // manually to your Android project.
       if (fs.existsSync(androidDir)) {
         const ANDROID_DENSITIES = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
         const androidResDir = path.join(PROJECT_ROOT, 'android', 'app', 'src', 'main', 'res');
@@ -547,6 +555,7 @@ async function main() {
 
         for (const density of ANDROID_DENSITIES) {
           const srcLauncher = path.join(androidDir, `ic_launcher-${density}.png`);
+          const srcForeground = path.join(androidDir, `ic_launcher_foreground-${density}.png`);
           const srcRound = path.join(androidDir, `ic_launcher_round-${density}.png`);
           const destDir = path.join(androidResDir, `mipmap-${density}`);
 
@@ -556,8 +565,11 @@ async function main() {
 
           if (fs.existsSync(srcLauncher)) {
             fs.copyFileSync(srcLauncher, path.join(destDir, 'ic_launcher.png'));
-            fs.copyFileSync(srcLauncher, path.join(destDir, 'ic_launcher_foreground.png'));
             copied++;
+          }
+
+          if (fs.existsSync(srcForeground)) {
+            fs.copyFileSync(srcForeground, path.join(destDir, 'ic_launcher_foreground.png'));
           }
 
           if (fs.existsSync(srcRound)) {
