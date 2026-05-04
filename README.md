@@ -15,6 +15,7 @@ RNWL enables you to build a single React Native app that can be branded and conf
 - 🚪 **Component Gating**: `RNWLGate` for conditional rendering
 - 🎨 **Brand Colors**: Per-brand color tokens accessible at runtime via `useRNWLColors()`
 - 🔗 **Deep Link Configuration**: Custom URL schemes and universal links, configured natively per brand
+- 🏷️ **Xcode Scheme Renaming**: Scheme files and `PRODUCT_NAME` in `project.pbxproj` are updated to match `displayName`, so the correct brand name appears in Xcode's scheme dropdown immediately after running the CLI
 - 📱 **Multi-Platform**: iOS, Android, and Web support
 - 💪 **TypeScript**: Fully typed API
 - 🔧 **Zero Config**: Works with sensible defaults
@@ -338,6 +339,51 @@ If the file is absent in the brand folder it is silently skipped — no error is
 
 > This replaces the entire destination file, so make sure the storyboard is complete and valid.
 
+## 🏷️ Xcode Scheme Renaming
+
+After applying a brand, opening the Xcode project shows the correct brand name in the scheme dropdown — no manual rename required.
+
+### What gets updated
+
+| File / location | Change |
+|-----------------|--------|
+| `ios/<App>.xcodeproj/xcshareddata/xcschemes/<ProjectName>[suffix].xcscheme` | File renamed to `<displayName>[suffix].xcscheme` |
+| Inside each renamed scheme file | `BlueprintName` attribute updated to `displayName` |
+| `ios/<App>.xcodeproj/project.pbxproj` | Hardcoded `PRODUCT_NAME = <ProjectName>;` entries replaced with `displayName` |
+
+The `.xcodeproj` folder itself and all `ios/<AppDir>/` paths are **never renamed** — they are referenced throughout the project and in Fastlane.
+
+### How scheme detection works
+
+Schemes are identified by looking for `ReferencedContainer = "container:<ProjectName>.xcodeproj"` inside the scheme XML. Because the `.xcodeproj` folder name never changes, this works regardless of what the scheme file is currently called — so the rename is **fully idempotent**:
+
+- Applying `connect` (displayName `Connect`) renames `hOn.xcscheme` → `Connect.xcscheme`
+- Applying `hon` afterwards (displayName `hOn`) finds `Connect.xcscheme` via the container reference and renames it back to `hOn.xcscheme`
+- Applying the same brand twice is a no-op
+
+Schemes that do not reference the project's `.xcodeproj` (e.g. CocoaPods schemes) are left untouched.
+
+### Suffix preservation
+
+Suffixed variants are handled automatically:
+
+Use the optional `schemeName` field in `config.yml` to set an explicit scheme identifier. If omitted, `displayName` is used as-is — set `schemeName` whenever `displayName` contains spaces to avoid issues with `xcodebuild` and CI scripts. `PRODUCT_NAME` in `project.pbxproj` is always set to `displayName` (spaces included) since that field supports it.
+
+```yaml
+displayName: "Blue Theme"
+schemeName: BlueTheme      # recommended when displayName has spaces
+```
+
+| Original file | After `schemeName: Connect` | After `schemeName: BlueTheme` |
+|---------------|-----------------------------|-------------------------------|
+| `hOn.xcscheme` | `Connect.xcscheme` | `BlueTheme.xcscheme` |
+| `hOn-release.xcscheme` | `Connect-release.xcscheme` | `BlueTheme-release.xcscheme` |
+| `hOn-tvOS.xcscheme` | `Connect-tvOS.xcscheme` | `BlueTheme-tvOS.xcscheme` |
+
+The suffix is derived by stripping the current `BlueprintName` value from the front of the filename — the remainder is kept as-is.
+
+If no matching `.xcscheme` files are found the step is skipped silently with a warning log.
+
 ## 🔥 Google Services Config
 
 Brand-specific Firebase / Google Services config files are copied automatically when present in the brand folder. No YAML key is required. Processed independently of `ignoreAssets`.
@@ -534,6 +580,7 @@ my-app/
 ```yaml
 brand: blue
 displayName: "Blue App"
+schemeName: BlueApp         # optional — Xcode scheme identifier (no spaces); defaults to displayName with spaces stripped
 bundleId: com.myapp.blue
 packageName: com.myapp.blue
 version: "1.0.0"
@@ -603,16 +650,17 @@ When executed, the CLI:
 4. Copies `android/strings.xml` from the brand config folder to `android/app/src/main/res/values/strings.xml` (if present)
 5. Updates `ios/.../Info.plist` with `CFBundleDisplayName`
 6. Copies `ios/LaunchScreen.storyboard` from the brand config folder to `ios/<App>/LaunchScreen.storyboard` (if present)
-7. Updates `ios/.../project.pbxproj` with `PRODUCT_BUNDLE_IDENTIFIER`, and optionally `CURRENT_PROJECT_VERSION` / `MARKETING_VERSION` if the flags are provided
-8. Copies Android icons into `mipmap-*` directories
-9. Copies iOS icons into `AppIcon.appiconset` and regenerates `Contents.json`
-10. Copies Android splash images into `mipmap-*` directories (if `android/splash/` exists in the brand folder)
-11. Copies iOS splash images into `Splashscreen.imageset` and/or `Splashscreen~landscape.imageset` and regenerates `Contents.json` (if `ios/splash/` exists)
-12. Copies `google-services.json` to `android/app/` (if present in the brand folder)
-13. Copies `GoogleService-Info.plist` to `ios/<App>/` (if present in the brand folder)
-14. Generates `rnwl.json` in the project root with the active feature flags and brand colors
-15. Configures native deep links (if `deeplinkScheme` or `universalLinkDomain` are set — see [Deep Link Configuration](#-deep-link-configuration))
-16. Writes additional iOS entitlements (if `iosEntitlements` is set — see [iOS Entitlements](#ios-entitlements-iosentitlements))
+7. Updates `ios/.../project.pbxproj` with `PRODUCT_BUNDLE_IDENTIFIER` and `PRODUCT_NAME`, and optionally `CURRENT_PROJECT_VERSION` / `MARKETING_VERSION` if the flags are provided
+8. Renames `.xcscheme` files inside `ios/<App>.xcodeproj/xcshareddata/xcschemes/` to match `displayName` and updates the `BlueprintName` attribute inside each file (see [Xcode Scheme Renaming](#-xcode-scheme-renaming))
+9. Copies Android icons into `mipmap-*` directories
+10. Copies iOS icons into `AppIcon.appiconset` and regenerates `Contents.json`
+11. Copies Android splash images into `mipmap-*` directories (if `android/splash/` exists in the brand folder)
+12. Copies iOS splash images into `Splashscreen.imageset` and/or `Splashscreen~landscape.imageset` and regenerates `Contents.json` (if `ios/splash/` exists)
+13. Copies `google-services.json` to `android/app/` (if present in the brand folder)
+14. Copies `GoogleService-Info.plist` to `ios/<App>/` (if present in the brand folder)
+15. Generates `rnwl.json` in the project root with the active feature flags and brand colors
+16. Configures native deep links (if `deeplinkScheme` or `universalLinkDomain` are set — see [Deep Link Configuration](#-deep-link-configuration))
+17. Writes additional iOS entitlements (if `iosEntitlements` is set — see [iOS Entitlements](#ios-entitlements-iosentitlements))
 
 ### Full example with version flags
 

@@ -2,8 +2,10 @@
   "brand": "blue",
   "packageName": "com.rnwl.blue",
   "displayName": "Blue Theme",
-  "deeplinkScheme": "blueapp",
-  "universalLinkDomain": "blue.example.com",
+  "deeplinkSchemes": [
+    "blueapp"
+  ],
+  "universalLinkDomain": null,
   "colors": {
     "primary": "#0066FF",
     "secondary": "#3366FF",
@@ -11,7 +13,11 @@
   },
   "params": {
     "apiBaseUrl": "https://api.blue.example.com",
-    "supportedLocales": ["en", "it", "fr"],
+    "supportedLocales": [
+      "en",
+      "it",
+      "fr"
+    ],
     "maxRetries": 3,
     "debugMode": false
   },

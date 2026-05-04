@@ -19,6 +19,7 @@ const { setPlistKey, removePlistKey } = require('./plistUtils');
 const { wrapExistingIntentFilter } = require('./manifestUtils');
 const { applyAndroidSplash, applyIosSplash } = require('./splashUtils');
 const { applyAndroidGoogleServices, applyIosGoogleServices } = require('./googleServicesUtils');
+const { applyXcodeSchemes } = require('./xcodeUtils');
 
 // Try to require js-yaml
 let yaml;
@@ -395,6 +396,15 @@ async function main() {
     const config = loadConfig(brand);
     const brandConfigDir = path.join(CONFIGS_DIR, brand);
 
+    // Detect Xcode project name from .xcodeproj folder (this folder is never renamed)
+    const iosProjDir = path.join(PROJECT_ROOT, 'ios');
+    let xcProjectName = null;
+    if (fs.existsSync(iosProjDir)) {
+      const xpDirs = fs.readdirSync(iosProjDir).filter(f => f.endsWith('.xcodeproj'));
+      if (xpDirs.length > 0) xcProjectName = xpDirs[0].replace(/\.xcodeproj$/, '');
+    }
+
+
     // Update app version
     console.log('\nUpdating app configuration...');
     const appJsonPath = path.join(PROJECT_ROOT, 'app.json');
@@ -444,7 +454,7 @@ async function main() {
     // Update iOS bundle identifier in project.pbxproj and display name in Info.plist
     const iosDir = path.join(PROJECT_ROOT, 'ios');
     if (fs.existsSync(iosDir)) {
-      if (config.bundleId || iosCurrentProjectVersion || iosMarketingVersion) {
+      if (config.bundleId || config.displayName || iosCurrentProjectVersion || iosMarketingVersion) {
         const xcodeprojDirs = fs.readdirSync(iosDir).filter(f => f.endsWith('.xcodeproj'));
         if (xcodeprojDirs.length > 0) {
           const pbxprojPath = path.join(iosDir, xcodeprojDirs[0], 'project.pbxproj');
@@ -466,6 +476,13 @@ async function main() {
               pbxContent = pbxContent.replace(
                 /MARKETING_VERSION = [^;]+;/g,
                 `MARKETING_VERSION = ${iosMarketingVersion};`
+              );
+            }
+            if (config.displayName) {
+              // Replace any hardcoded PRODUCT_NAME (skip variable references like $(TARGET_NAME))
+              pbxContent = pbxContent.replace(
+                /PRODUCT_NAME = (?!\$\()[^;]+;/g,
+                `PRODUCT_NAME = ${config.displayName};`
               );
             }
             writeFile(pbxprojPath, pbxContent);
@@ -495,6 +512,10 @@ async function main() {
             fs.copyFileSync(brandStoryboardPath, destStoryboardPath);
           }
         }
+      }
+      if (config.schemeName && xcProjectName) {
+        console.log('\nRenaming Xcode schemes...');
+        applyXcodeSchemes(iosDir, xcProjectName, config.schemeName, PROJECT_ROOT);
       }
     }
 

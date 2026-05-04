@@ -1,5 +1,6 @@
 brand: blue
 displayName: Blue Theme
+schemeName: BlueTheme
 bundleId: com.rnwl.blue
 packageName: com.rnwl.blue
 version: "2.0.0"

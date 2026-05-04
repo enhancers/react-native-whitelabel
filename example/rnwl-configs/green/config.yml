@@ -1,5 +1,6 @@
 brand: green
 displayName: Green Theme
+schemeName: GreenTheme
 bundleId: com.rnwl.green
 packageName: com.rnwl.green
 version: "1.0.0"

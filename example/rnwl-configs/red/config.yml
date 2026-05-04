@@ -1,5 +1,6 @@
 brand: red
 displayName: Red Theme
+schemeName: RedTheme
 bundleId: com.rnwl.red
 packageName: com.rnwl.red
 version: "1.0.0"
