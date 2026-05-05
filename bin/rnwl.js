@@ -478,11 +478,17 @@ async function main() {
                 `MARKETING_VERSION = ${iosMarketingVersion};`
               );
             }
-            if (config.displayName) {
-              // Replace any hardcoded PRODUCT_NAME (skip variable references like $(TARGET_NAME))
+            if (config.schemeName || config.displayName) {
+              // PRODUCT_NAME controls the .app bundle filename and CFBundleName — must be
+              // space-free. Use schemeName (e.g. "BlueTheme") when available; fall back to
+              // displayName with quoting if needed (pbxproj requires quotes for spaces).
+              const rawName = config.schemeName || config.displayName;
+              const pbxProductName = /^[A-Za-z0-9_./-]+$/.test(rawName)
+                ? rawName
+                : `"${rawName}"`;
               pbxContent = pbxContent.replace(
                 /PRODUCT_NAME = (?!\$\()[^;]+;/g,
-                `PRODUCT_NAME = ${config.displayName};`
+                `PRODUCT_NAME = ${pbxProductName};`
               );
             }
             writeFile(pbxprojPath, pbxContent);

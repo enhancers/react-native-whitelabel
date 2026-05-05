@@ -8,13 +8,32 @@ function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function longestCommonPrefix(strings) {
+  if (strings.length === 0) return '';
+  let prefix = strings[0];
+  for (let i = 1; i < strings.length; i++) {
+    while (!strings[i].startsWith(prefix)) {
+      prefix = prefix.slice(0, -1);
+      if (prefix === '') return '';
+    }
+  }
+  return prefix;
+}
+
 /**
- * Rename Xcode scheme files and update BlueprintName inside each to match schemeName.
- * Schemes are detected by their ReferencedContainer pointing to the (never-renamed) .xcodeproj.
- * The current prefix is read from each scheme's BlueprintName attribute so renames are idempotent.
+ * Rename Xcode scheme files so Xcode does not show "No scheme".
+ *
+ * Key design:
+ *  - The scheme name shown in Xcode's toolbar = the .xcscheme *filename* (without extension).
+ *    It is NOT derived from BlueprintName.
+ *  - BlueprintName inside the file must match the Xcode *target* name (= projectName for
+ *    standard RN projects). Setting it to the scheme name causes Xcode 15+ to fail resolving
+ *    the buildable reference, showing "No scheme".
+ *  - The current base name (for chained renames, e.g. Blue → Green) is inferred from the
+ *    longest common prefix of all relevant scheme filenames — no metadata comment needed.
  *
  * @param {string} iosDir      - Absolute path to the ios/ directory
- * @param {string} projectName - Name derived from the .xcodeproj folder (e.g. "hOn")
+ * @param {string} projectName - Name derived from the .xcodeproj folder (e.g. "MyApp")
  * @param {string} schemeName  - Target scheme identifier (e.g. "BlueTheme")
  * @param {string} projectRoot - Project root used for relative-path log output
  */
@@ -35,44 +54,62 @@ function applyXcodeSchemes(iosDir, projectName, schemeName, projectRoot) {
     return;
   }
 
-  // Only touch schemes that reference this project's .xcodeproj (stable, never renamed)
   const containerRef = `container:${projectName}.xcodeproj`;
+
+  // Collect only scheme files that reference this project's .xcodeproj
+  const relevant = schemeFiles.filter(f => {
+    const content = fs.readFileSync(path.join(schemesDir, f), 'utf8');
+    return content.includes(containerRef);
+  });
+
+  if (relevant.length === 0) {
+    console.log('  ✓ Xcode schemes already up to date');
+    return;
+  }
+
+  const relevantBaseNames = relevant.map(f => f.replace(/\.xcscheme$/, ''));
+
+  // ── Determine the old base name ───────────────────────────────────────────
+  // 1. Already uses schemeName as prefix → idempotent run.
+  // 2. Uses projectName as prefix → first-time application.
+  // 3. Anything else (previously renamed) → use longest common prefix of all names.
+  let oldBase;
+  if (relevantBaseNames.every(n => n.startsWith(schemeName))) {
+    oldBase = schemeName;
+  } else if (relevantBaseNames.every(n => n.startsWith(projectName))) {
+    oldBase = projectName;
+  } else {
+    oldBase = longestCommonPrefix(relevantBaseNames);
+    if (!oldBase) {
+      console.log('  ⚠ Cannot determine current scheme base name, skipping scheme rename');
+      return;
+    }
+  }
+
+  const validSchemeNames = new Set();
+  const schemeRenames = {};
   let processed = 0;
 
-  // Track renames for updating user data afterwards: { oldBaseName -> newBaseName }
-  const schemeRenames = {};
-
-  for (const schemeFile of schemeFiles) {
+  for (const schemeFile of relevant) {
     const schemePath = path.join(schemesDir, schemeFile);
     const content = fs.readFileSync(schemePath, 'utf8');
-    if (!content.includes(containerRef)) continue;
-
     const baseName = schemeFile.replace(/\.xcscheme$/, '');
-
-    // BlueprintName holds the current "base" prefix; the rest of the filename is a suffix
-    // (e.g. file "Connect-release.xcscheme", BlueprintName "Connect" → suffix "-release")
-    const bpMatch = content.match(/BlueprintName\s*=\s*"([^"]+)"/);
-    let currentPrefix = bpMatch ? bpMatch[1] : null;
-    let suffix = '';
-
-    if (currentPrefix && baseName.startsWith(currentPrefix)) {
-      suffix = baseName.slice(currentPrefix.length);
-    } else if (baseName.startsWith(projectName)) {
-      // Fallback for schemes whose BlueprintName differs from the file-name prefix
-      currentPrefix = projectName;
-      suffix = baseName.slice(projectName.length);
-    } else {
-      console.log(`  ⚠ Skipping ${schemeFile}: cannot determine scheme name mapping`);
-      continue;
-    }
-
+    const suffix = baseName.slice(oldBase.length);
     const newBaseName = `${schemeName}${suffix}`;
     const newSchemePath = path.join(schemesDir, `${newBaseName}.xcscheme`);
+    validSchemeNames.add(newBaseName);
 
-    const updatedContent = content.replace(
-      new RegExp(`(BlueprintName\\s*=\\s*")${escapeRegex(currentPrefix)}"`, 'g'),
-      `$1${schemeName}"`
-    );
+    // Strip any legacy RNWL tracking comment left by older versions of this script.
+    let updatedContent = content.replace(/\n?[ \t]*<!--\s*RNWL:[^>]*-->\n?/g, '\n');
+
+    // Fix BlueprintName if it was incorrectly set to oldBase by a previous RNWL run.
+    // BlueprintName must equal the target name (= projectName), not the scheme name.
+    if (oldBase !== projectName) {
+      updatedContent = updatedContent.replace(
+        new RegExp(`(BlueprintName\\s*=\\s*")${escapeRegex(oldBase)}"`, 'g'),
+        `$1${projectName}"`
+      );
+    }
 
     if (newSchemePath !== schemePath || updatedContent !== content) {
       fs.writeFileSync(newSchemePath, updatedContent, 'utf8');
@@ -92,48 +129,44 @@ function applyXcodeSchemes(iosDir, projectName, schemeName, projectRoot) {
     return;
   }
 
+  cleanupUserSchemeData(iosDir, xcodeprojDir, schemeRenames, validSchemeNames);
+
   if (Object.keys(schemeRenames).length > 0) {
-    updateUserSchemeData(iosDir, xcodeprojDir, schemeRenames);
+    console.log('  ℹ If Xcode is open, close and reopen it to see the renamed scheme.');
   }
 }
 
 /**
- * After renaming scheme files, update xcschememanagement.plist and
- * UserInterfaceState.xcuserstate so Xcode doesn't show "No scheme".
- *
- * @param {string} iosDir        - Absolute path to the ios/ directory
- * @param {string} xcodeprojDir  - Absolute path to the .xcodeproj directory
- * @param {Object} schemeRenames - Map of { oldBaseName: newBaseName }
+ * Update xcschememanagement.plist and delete stale UserInterfaceState.xcuserstate files.
  */
-function updateUserSchemeData(iosDir, xcodeprojDir, schemeRenames) {
+function cleanupUserSchemeData(iosDir, xcodeprojDir, schemeRenames, validNames) {
   const searchRoots = [
     xcodeprojDir,
     path.join(xcodeprojDir, 'project.xcworkspace'),
   ];
-
-  // Also include any .xcworkspace generated by CocoaPods at the ios/ level
   try {
     for (const entry of fs.readdirSync(iosDir)) {
-      if (entry.endsWith('.xcworkspace')) {
-        searchRoots.push(path.join(iosDir, entry));
-      }
+      if (entry.endsWith('.xcworkspace')) searchRoots.push(path.join(iosDir, entry));
     }
   } catch (_) {}
 
   for (const root of searchRoots) {
     const xcuserdataDir = path.join(root, 'xcuserdata');
     if (!fs.existsSync(xcuserdataDir)) continue;
-
     let userDirs;
-    try {
-      userDirs = fs.readdirSync(xcuserdataDir);
-    } catch (_) {
-      continue;
-    }
+    try { userDirs = fs.readdirSync(xcuserdataDir); } catch (_) { continue; }
 
     for (const userDir of userDirs) {
-      updateSchemeManagementPlist(path.join(xcuserdataDir, userDir, 'xcschemes', 'xcschememanagement.plist'), schemeRenames);
-      updateUserInterfaceState(path.join(xcuserdataDir, userDir, 'UserInterfaceState.xcuserstate'), schemeRenames);
+      if (Object.keys(schemeRenames).length > 0) {
+        updateSchemeManagementPlist(
+          path.join(xcuserdataDir, userDir, 'xcschemes', 'xcschememanagement.plist'),
+          schemeRenames
+        );
+      }
+      deleteStaleXcuserstate(
+        path.join(xcuserdataDir, userDir, 'UserInterfaceState.xcuserstate'),
+        validNames
+      );
     }
   }
 }
@@ -147,10 +180,7 @@ function updateSchemeManagementPlist(plistPath, schemeRenames) {
       new RegExp(`(<key>)${escapeRegex(oldName)}(\\.xcscheme</key>)`, 'g'),
       `$1${newName}$2`
     );
-    if (updated !== content) {
-      content = updated;
-      changed = true;
-    }
+    if (updated !== content) { content = updated; changed = true; }
   }
   if (changed) {
     fs.writeFileSync(plistPath, content, 'utf8');
@@ -158,42 +188,26 @@ function updateSchemeManagementPlist(plistPath, schemeRenames) {
   }
 }
 
-function updateUserInterfaceState(statePath, schemeRenames) {
+/**
+ * Delete UserInterfaceState.xcuserstate if the active scheme it references
+ * is not in the set of currently valid scheme names.
+ */
+function deleteStaleXcuserstate(statePath, validSchemeNames) {
   if (!fs.existsSync(statePath)) return;
   try {
-    // Convert binary plist to XML so we can do text replacement
-    execSync(`plutil -convert xml1 "${statePath}"`, { stdio: 'pipe' });
-    let content = fs.readFileSync(statePath, 'utf8');
-    let changed = false;
-    for (const [oldName, newName] of Object.entries(schemeRenames)) {
-      // Matches: entity:<target>:scheme:OldName project:<n>
-      const updated = content.replace(
-        new RegExp(`(entity:[^:]+:scheme:)${escapeRegex(oldName)}( project:)`, 'g'),
-        `$1${newName}$2`
-      );
-      // Also matches bare scheme name references
-      const updated2 = updated.replace(
-        new RegExp(`(:scheme:)${escapeRegex(oldName)}([ "<])`, 'g'),
-        `$1${newName}$2`
-      );
-      if (updated2 !== content) {
-        content = updated2;
-        changed = true;
+    const xml = execSync(`plutil -convert xml1 -o - "${statePath}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString();
+    const match = xml.match(/entity:[^:]+:scheme:([^<"\s]+)/);
+    if (match) {
+      const activeScheme = match[1];
+      if (!validSchemeNames.has(activeScheme)) {
+        fs.unlinkSync(statePath);
+        console.log(`  ✓ Reset: UserInterfaceState.xcuserstate (schema "${activeScheme}" non più valido)`);
       }
     }
-    if (changed) {
-      fs.writeFileSync(statePath, content, 'utf8');
-    }
-    // Always convert back to binary (even if unchanged, plutil already changed the format)
-    execSync(`plutil -convert binary1 "${statePath}"`, { stdio: 'pipe' });
-    if (changed) {
-      console.log(`  ✓ Updated: UserInterfaceState.xcuserstate`);
-    }
   } catch (_) {
-    // plutil not available or parse error — delete so Xcode recreates it cleanly
     try {
       fs.unlinkSync(statePath);
-      console.log(`  ✓ Reset: UserInterfaceState.xcuserstate (will be recreated by Xcode)`);
+      console.log(`  ✓ Reset: UserInterfaceState.xcuserstate`);
     } catch (_2) {}
   }
 }
