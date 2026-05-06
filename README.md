@@ -270,13 +270,9 @@ Supported densities: `mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`.
 
 > **Why not auto-generate `ic_launcher_foreground` from `ic_launcher`?** On Android 8.0+ launchers (Samsung, Pixel, etc.) that find a `ic_launcher_foreground` in the APK, they apply a circular mask to it. A square icon not designed for the safe zone would appear visually cropped.
 
-## 🖼️ Splash Screen Assets
+## 🤖 Android Splash Screen
 
-Splash screen images are processed automatically when a `splash/` folder is present inside the brand's `android/` or `ios/` directory. No YAML key is required. The `ignoreAssets: true` flag also skips splash processing.
-
-### Android
-
-Place source files in `rnwl-configs/<brand>/android/splash/`:
+Place source files in `rnwl-configs/<brand>/android/splash/`. No YAML key is required. The `ignoreAssets: true` flag also skips splash processing.
 
 | Source file | Destination |
 |-------------|-------------|
@@ -288,23 +284,6 @@ Place source files in `rnwl-configs/<brand>/android/splash/`:
 | `splashscreen-xxxhdpi.png` | `android/app/src/main/res/mipmap-xxxhdpi/splashscreen.png` |
 
 Landscape variants are optional — add `splashscreen_land-{density}.png` files and they will be copied to `mipmap-{density}/splashscreen_land.png`.
-
-### iOS
-
-Place source files in `rnwl-configs/<brand>/ios/splash/`:
-
-| Source file | Destination |
-|-------------|-------------|
-| `Splashscreen.png` | `ios/<App>/Images.xcassets/Splashscreen.imageset/` |
-| `Splashscreen@2x.png` | `ios/<App>/Images.xcassets/Splashscreen.imageset/` |
-| `Splashscreen@3x.png` | `ios/<App>/Images.xcassets/Splashscreen.imageset/` |
-| `Splashscreen~landscape.png` | `ios/<App>/Images.xcassets/Splashscreen~landscape.imageset/` |
-| `Splashscreen~landscape@2x.png` | `ios/<App>/Images.xcassets/Splashscreen~landscape.imageset/` |
-| `Splashscreen~landscape@3x.png` | `ios/<App>/Images.xcassets/Splashscreen~landscape.imageset/` |
-
-`Contents.json` is regenerated automatically based on which files are present. Landscape variants are optional — if no `Splashscreen~landscape[@Nx].png` files are found, `Splashscreen~landscape.imageset` is left untouched.
-
-> **Note:** the CLI copies images into existing imagesets — it does not create `Splashscreen.imageset` or `Splashscreen~landscape.imageset` if they don't already exist in your Xcode project.
 
 ## 📄 Android strings.xml
 
@@ -327,17 +306,71 @@ If the file is absent in the brand folder it is silently skipped — no error is
 
 > This replaces the entire destination file, so make sure to include all string keys your app references.
 
-## 🍎 iOS LaunchScreen.storyboard
+## 🍎 iOS Splash Screen
 
-Place a `LaunchScreen.storyboard` file in `rnwl-configs/<brand>/ios/LaunchScreen.storyboard` to fully control the iOS launch screen for that brand. The CLI copies it directly to `ios/<App>/LaunchScreen.storyboard` when present.
+All iOS splash screen assets are placed in `rnwl-configs/<brand>/ios/splash/`. No YAML key is required. The `ignoreAssets: true` flag also skips splash processing.
+
+### Imageset assets
+
+These files are copied into the corresponding `.imageset` directories in `Images.xcassets` and `Contents.json` is regenerated automatically based on which files are present:
 
 | Source file | Destination |
 |-------------|-------------|
-| `rnwl-configs/<brand>/ios/LaunchScreen.storyboard` | `ios/<App>/LaunchScreen.storyboard` |
+| `Splashscreen.png` | `ios/<App>/Images.xcassets/Splashscreen.imageset/` |
+| `Splashscreen@2x.png` | `ios/<App>/Images.xcassets/Splashscreen.imageset/` |
+| `Splashscreen@3x.png` | `ios/<App>/Images.xcassets/Splashscreen.imageset/` |
+| `Splashscreen~landscape.png` | `ios/<App>/Images.xcassets/Splashscreen~landscape.imageset/` |
+| `Splashscreen~landscape@2x.png` | `ios/<App>/Images.xcassets/Splashscreen~landscape.imageset/` |
+| `Splashscreen~landscape@3x.png` | `ios/<App>/Images.xcassets/Splashscreen~landscape.imageset/` |
 
-If the file is absent in the brand folder it is silently skipped — no error is thrown.
+Landscape variants are optional — if no `Splashscreen~landscape[@Nx].png` files are found, `Splashscreen~landscape.imageset` is left untouched.
 
-> This replaces the entire destination file, so make sure the storyboard is complete and valid.
+> **Note:** the CLI copies images into existing imagesets — it does not create `Splashscreen.imageset` or `Splashscreen~landscape.imageset` if they don't already exist in your Xcode project.
+
+### Launch Storyboard
+
+The CLI copies the launch storyboard and its referenced images from the brand config automatically, using `UILaunchStoryboardName` from `Info.plist` to resolve the correct destination.
+
+#### How it works
+
+1. The CLI reads `UILaunchStoryboardName` from `ios/<App>/Info.plist` and normalises the value by appending `.storyboard` if absent (e.g. `Launch` → `Launch.storyboard`). Falls back to `LaunchScreen.storyboard` if the key is missing.
+2. The CLI looks for the source storyboard in `rnwl-configs/<brand>/ios/`:
+   - First tries an exact name match (`<UILaunchStoryboardName>`)
+   - If not found, picks any `.storyboard` file present in that folder
+3. The destination is resolved in this order:
+   - `ios/<App>/<UILaunchStoryboardName>` — classic location inside the app folder
+   - `ios/<UILaunchStoryboardName>` — root of the `ios/` directory
+4. The storyboard is copied to the first path that already exists in the project.
+5. The CLI parses the storyboard XML and extracts all referenced image names (`<imageView image="...">` and `<image name="...">`). For each name it looks for `<name>.png`, `<name>@2x.png`, `<name>@3x.png` in `rnwl-configs/<brand>/ios/splash/` and copies any found files to the same directory as the storyboard.
+
+#### Warnings
+
+The CLI emits a warning (non-fatal) in these cases:
+
+| Situation | Warning |
+|-----------|---------|
+| No `.storyboard` file found in brand config `ios/` | `⚠ No .storyboard found in brand config ios/ — launch screen not updated` |
+| Storyboard references an image with no matching file in `ios/splash/` | `⚠ Storyboard references image(s) not found in ios/splash: <name> — launch screen may appear broken` |
+
+#### Brand config structure
+
+```
+rnwl-configs/<brand>/ios/
+  <any>.storyboard        ← any name — copied to the path declared in UILaunchStoryboardName
+  splash/
+    icon.png              ← images referenced by the storyboard (all variants optional)
+    icon@2x.png
+    icon@3x.png
+```
+
+#### Examples
+
+| `UILaunchStoryboardName` | Brand config file | Destination |
+|--------------------------|-------------------|-------------|
+| `LaunchScreen` | `ios/LaunchScreen.storyboard` | `ios/<App>/LaunchScreen.storyboard` |
+| `Launch` | `ios/LaunchScreen.storyboard` | `ios/Launch.storyboard` (resolved from root) |
+| `Launch` | `ios/Launch.storyboard` | `ios/Launch.storyboard` (resolved from root) |
+| `MyCustomSplash` | `ios/anything.storyboard` | `ios/<App>/MyCustomSplash.storyboard` |
 
 ## 🏷️ Xcode Scheme Renaming
 
@@ -559,14 +592,14 @@ my-app/
 │   │       │   ├── AppIcon-120.png
 │   │       │   └── ...
 │   │       ├── splash/
-│   │       │   └── ...
-│   │       ├── LaunchScreen.storyboard          (optional)
 │   │       │   ├── Splashscreen.png
 │   │       │   ├── Splashscreen@2x.png
 │   │       │   ├── Splashscreen@3x.png
 │   │       │   ├── Splashscreen~landscape.png   (optional landscape)
 │   │       │   ├── Splashscreen~landscape@2x.png
-│   │       │   └── Splashscreen~landscape@3x.png
+│   │       │   ├── Splashscreen~landscape@3x.png
+│   │       │   └── icon.png, icon@2x.png ...    (optional — storyboard-referenced images)
+│   │       ├── <any>.storyboard                     (optional — any name; destination resolved from UILaunchStoryboardName in Info.plist)
 │   │       └── GoogleService-Info.plist         (optional)
 │   └── red/
 │       └── config.yml
@@ -649,13 +682,13 @@ When executed, the CLI:
 3. Updates `android/app/build.gradle` with `applicationId`, and optionally `versionCode` / `versionName` if the flags are provided
 4. Copies `android/strings.xml` from the brand config folder to `android/app/src/main/res/values/strings.xml` (if present)
 5. Updates `ios/.../Info.plist` with `CFBundleDisplayName`
-6. Copies `ios/LaunchScreen.storyboard` from the brand config folder to `ios/<App>/LaunchScreen.storyboard` (if present)
+6. Copies the launch storyboard from the brand config using `UILaunchStoryboardName` from `Info.plist` to resolve the correct filename and destination, and copies storyboard-referenced images from `ios/splash/` next to the storyboard (see [iOS Splash Screen](#-ios-splash-screen))
 7. Updates `ios/.../project.pbxproj` with `PRODUCT_BUNDLE_IDENTIFIER` and `PRODUCT_NAME`, and optionally `CURRENT_PROJECT_VERSION` / `MARKETING_VERSION` if the flags are provided
 8. Renames `.xcscheme` files inside `ios/<App>.xcodeproj/xcshareddata/xcschemes/` to match `displayName` and updates the `BlueprintName` attribute inside each file (see [Xcode Scheme Renaming](#-xcode-scheme-renaming))
 9. Copies Android icons into `mipmap-*` directories
 10. Copies iOS icons into `AppIcon.appiconset` and regenerates `Contents.json`
 11. Copies Android splash images into `mipmap-*` directories (if `android/splash/` exists in the brand folder)
-12. Copies iOS splash images into `Splashscreen.imageset` and/or `Splashscreen~landscape.imageset` and regenerates `Contents.json` (if `ios/splash/` exists)
+12. Copies iOS splash images into `Splashscreen.imageset` and/or `Splashscreen~landscape.imageset` and regenerates `Contents.json` (if `ios/splash/` exists — see [iOS Splash Screen](#-ios-splash-screen))
 13. Copies `google-services.json` to `android/app/` (if present in the brand folder)
 14. Copies `GoogleService-Info.plist` to `ios/<App>/` (if present in the brand folder)
 15. Generates `rnwl.json` in the project root with the active feature flags and brand colors

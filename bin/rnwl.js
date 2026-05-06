@@ -503,19 +503,74 @@ async function main() {
         for (const appDir of appDirs) {
           // Info.plist
           const infoPlistPath = path.join(iosDir, appDir, 'Info.plist');
+          let plistContent = null;
           if (fs.existsSync(infoPlistPath)) {
-            const plistContent = readFile(infoPlistPath);
+            plistContent = readFile(infoPlistPath);
             const updated = plistContent.replace(
               /(<key>CFBundleDisplayName<\/key>\s*<string>)[^<]*(<\/string>)/,
               `$1${config.displayName}$2`
             );
             writeFile(infoPlistPath, updated);
           }
-          // LaunchScreen.storyboard — copy from brand config if present
-          const brandStoryboardPath = path.join(brandConfigDir, 'ios', 'LaunchScreen.storyboard');
-          const destStoryboardPath = path.join(iosDir, appDir, 'LaunchScreen.storyboard');
-          if (fs.existsSync(brandStoryboardPath)) {
+          // LaunchScreen storyboard — copy from brand config if present
+          const plistLaunchMatch = plistContent && plistContent.match(
+            /<key>UILaunchStoryboardName<\/key>\s*<string>([^<]+)<\/string>/
+          );
+          const launchStoryboardName = plistLaunchMatch
+            ? (plistLaunchMatch[1].endsWith('.storyboard') ? plistLaunchMatch[1] : `${plistLaunchMatch[1]}.storyboard`)
+            : 'LaunchScreen.storyboard';
+          const brandIosDir = path.join(brandConfigDir, 'ios');
+          const brandStoryboardPath = (() => {
+            const exact = path.join(brandIosDir, launchStoryboardName);
+            if (fs.existsSync(exact)) return exact;
+            if (!fs.existsSync(brandIosDir)) return null;
+            const any = fs.readdirSync(brandIosDir).find(f => f.endsWith('.storyboard'));
+            return any ? path.join(brandIosDir, any) : null;
+          })();
+          if (brandStoryboardPath) {
+            const candidatePaths = [
+              path.join(iosDir, appDir, launchStoryboardName),
+              path.join(iosDir, launchStoryboardName),
+            ];
+            const destStoryboardPath = candidatePaths.find(p => fs.existsSync(p))
+              || (plistLaunchMatch ? candidatePaths[0] : path.join(iosDir, appDir, 'LaunchScreen.storyboard'));
             fs.copyFileSync(brandStoryboardPath, destStoryboardPath);
+            console.log(`  ✓ Copied ${launchStoryboardName} → ${path.relative(PROJECT_ROOT, destStoryboardPath)}`);
+
+            // Copy images referenced by the storyboard from brand's ios/splash/
+            const storyboardXml = fs.readFileSync(brandStoryboardPath, 'utf8');
+            const referencedImages = new Set();
+            let m;
+            const reImageView = /<imageView[^>]+\bimage="([^"]+)"/g;
+            while ((m = reImageView.exec(storyboardXml)) !== null) referencedImages.add(m[1]);
+            const reImageRes = /<image\b[^>]*\bname="([^"]+)"/g;
+            while ((m = reImageRes.exec(storyboardXml)) !== null) referencedImages.add(m[1]);
+
+            const brandSplashDir = path.join(brandConfigDir, 'ios', 'splash');
+            const destDir = path.dirname(destStoryboardPath);
+            let copiedImages = 0;
+            const missingImages = [];
+            for (const imageName of referencedImages) {
+              let found = false;
+              for (const suffix of ['', '@2x', '@3x']) {
+                const filename = `${imageName}${suffix}.png`;
+                const src = path.join(brandSplashDir, filename);
+                if (fs.existsSync(src)) {
+                  fs.copyFileSync(src, path.join(destDir, filename));
+                  copiedImages++;
+                  found = true;
+                }
+              }
+              if (!found) missingImages.push(imageName);
+            }
+            if (copiedImages > 0) {
+              console.log(`  ✓ Copied ${copiedImages} storyboard image(s) from ios/splash → ${path.relative(PROJECT_ROOT, destDir)}`);
+            }
+            if (missingImages.length > 0) {
+              console.warn(`  ⚠ Storyboard references image(s) not found in ios/splash: ${missingImages.join(', ')} — launch screen may appear broken`);
+            }
+          } else {
+            console.warn(`  ⚠ No .storyboard found in brand config ios/ — launch screen not updated`);
           }
         }
       }
